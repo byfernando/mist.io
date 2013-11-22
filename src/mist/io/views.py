@@ -198,6 +198,10 @@ def add_backend(request, renderer='json'):
         if backend_id in backends:
             return Response('Backend exists', 409)
 
+        #for HP Cloud
+        if title.startswith('HP Cloud'):
+            apiurl = 'https://region-a.geo-1.identity.hpcloudsvc.com:35357/v2.0/'
+
         backend = {'title': title,
                    'provider': provider,
                    'apikey': apikey,

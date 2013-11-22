@@ -15,10 +15,10 @@ define('app/controllers/backend_add', [
                 this.set('newBackendProvider', null);
                 this.set('newBackendKey', null);
                 this.set('newBackendSecret', null);
-                /* OpenStack support
+
                 this.set('newBackendURL', null);
                 this.set('newBackendTenant', null);
-                */
+
                 $('.select-backend-collapsible .ui-icon').removeClass('ui-icon-check').addClass('ui-icon-arrow-d');
                 $('.select-backend-collapsible span.ui-btn-text').text('Select provider');
             },

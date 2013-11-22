@@ -248,11 +248,20 @@ def connect(request, backend_id=False):
     driver = get_driver(backend['provider'])
 
     if backend['provider'] == Provider.OPENSTACK:
-        conn = driver(backend['apikey'],
+        if backend['title'].startswith('HP Cloud'):
+            conn = driver(backend['apikey'],
                       backend['apisecret'],
                       ex_force_auth_version=backend.get('auth_version', '2.0_password'),
                       ex_force_auth_url=backend.get('apiurl', None),
-                      ex_tenant_name=backend.get('tenant_name', None))
+                      ex_tenant_name=backend.get('tenant_name', None),
+                      ex_force_service_region = backend.get('region'),
+                      ex_force_service_name='Compute')     
+        else:       
+            conn = driver(backend['apikey'],
+                      backend['apisecret'],
+                      ex_force_auth_version=backend.get('auth_version', '2.0_password'),
+                      ex_force_auth_url=backend.get('apiurl', None),
+                      ex_tenant_name=backend.get('tenant_name', None))                      
     elif backend['provider'] == Provider.LINODE:
         conn = driver(backend['apisecret'])
     elif backend['provider'] == Provider.RACKSPACE_FIRST_GEN:
