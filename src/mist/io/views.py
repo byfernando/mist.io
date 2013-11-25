@@ -446,8 +446,8 @@ def create_machine(request):
                 break
 
     if conn.type in [Provider.RACKSPACE_FIRST_GEN, 
-                     Provider.RACKSPACE, 
-                     Provider.OPENSTACK] and public_key:
+                     Provider.RACKSPACE] and public_key:
+
         key = SSHKeyDeployment(str(public_key))
         deploy_script = ScriptDeployment(script)
         msd = MultiStepDeployment([key, deploy_script])
@@ -460,6 +460,25 @@ def create_machine(request):
             associate_key(request, key_id, backend_id, node.id, deploy=False)
         except Exception as e:
             return Response('Failed to create machine in Rackspace: %s' % e, 500)
+    elif conn.type is Provider.OPENSTACK and public_key:
+        (tmp_key, tmp_key_path) = tempfile.mkstemp()
+        key_fd = os.fdopen(tmp_key, 'w+b')
+        key_fd.write(private_key)
+        key_fd.close()
+        key = SSHKeyDeployment(str(public_key))
+        deploy_script = ScriptDeployment(script)
+        msd = MultiStepDeployment([key, deploy_script])
+
+        try:
+            node = conn.deploy_node(name=machine_name,
+                             image=image,
+                             size=size,
+                             deploy=msd,
+                             location=location,
+                             ssh_key=tmp_key_path)
+            associate_key(request, key_id, backend_id, node.id, deploy=False)
+        except Exception as e:
+            return Response('Failed to create machine in OpenStack: %s' % e, 500)            
     elif conn.type in EC2_PROVIDERS and public_key and private_key:
         imported_key = import_key(conn, public_key, key_id)
         created_security_group = create_security_group(conn, EC2_SECURITYGROUP)
