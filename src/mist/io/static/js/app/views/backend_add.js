@@ -57,7 +57,7 @@ define('app/views/backend_add', [
                     $('#addBackendOpenstack').show();
                     //This is the apiurl for HPCloud. We autocomplete the api url instead of hiding this field, for consistency with openstack
                     if (event.target.title.indexOf("region-") != -1) {
-                        $('#create-backend-url').val('https://region-a.geo-1.identity.hpcloudsvc.com:35357/v2.0/');      
+                        Mist.backendAddController.set('newBackendURL', 'https://region-a.geo-1.identity.hpcloudsvc.com:35357/v2.0/');
                     }              
                 } else {
                     $('#ApiKeylabel').text('2. API Key:');
