@@ -445,6 +445,11 @@ def create_machine(request):
                 location = loc
                 break
 
+    (tmp_key, tmp_key_path) = tempfile.mkstemp()
+    key_fd = os.fdopen(tmp_key, 'w+b')
+    key_fd.write(private_key)
+    key_fd.close()
+
     if conn.type in [Provider.RACKSPACE_FIRST_GEN, 
                      Provider.RACKSPACE] and public_key:
 
@@ -461,19 +466,30 @@ def create_machine(request):
         except Exception as e:
             return Response('Failed to create machine in Rackspace: %s' % e, 500)
     elif conn.type is Provider.OPENSTACK and public_key:
-        (tmp_key, tmp_key_path) = tempfile.mkstemp()
-        key_fd = os.fdopen(tmp_key, 'w+b')
-        key_fd.write(private_key)
-        key_fd.close()
         key = SSHKeyDeployment(str(public_key))
         deploy_script = ScriptDeployment(script)
         msd = MultiStepDeployment([key, deploy_script])
+        key = str(public_key).replace('\n','')
 
+        try:
+            server_key = ''        
+            keys = conn.ex_list_keypairs()
+            for k in keys:
+                if key == k.public_key:
+                    server_key = k.name
+                    break
+            if not server_key:
+                server_key = conn.ex_create_keypair(name=machine_name, public_key=key)
+                server_key = machine_name
+        except:
+            server_key = conn.ex_create_keypair(name='mistio'+str(random.randint(1,100000)), public_key=key)       
+            server_key = server_key.name
         try:
             node = conn.deploy_node(name=machine_name,
                              image=image,
                              size=size,
-                             deploy=msd,
+                             ex_keyname=server_key,
+                             deploy=msd,                             
                              location=location,
                              ssh_key=tmp_key_path)
             associate_key(request, key_id, backend_id, node.id, deploy=False)
@@ -484,10 +500,6 @@ def create_machine(request):
         created_security_group = create_security_group(conn, EC2_SECURITYGROUP)
         deploy_script = ScriptDeployment(script)
 
-        (tmp_key, tmp_key_path) = tempfile.mkstemp()
-        key_fd = os.fdopen(tmp_key, 'w+b')
-        key_fd.write(private_key)
-        key_fd.close()
         #deploy_node wants path for ssh private key
         if imported_key and created_security_group:
             try:
@@ -515,12 +527,7 @@ def create_machine(request):
         # characters and the hyphen ('-') character, cannot exceed 15 characters,
         # and can end with a letter or a number.
         key = str(public_key).replace('\n','')
-        deploy_script = ScriptDeployment(script)        
-        
-        (tmp_key, tmp_key_path) = tempfile.mkstemp()
-        key_fd = os.fdopen(tmp_key, 'w+b')
-        key_fd.write(private_key)
-        key_fd.close()
+        deploy_script = ScriptDeployment(script)                
 
         #NephoScale has 2 keys that need be specified, console and ssh key
         #get the id of the ssh key if it exists, otherwise add the key
@@ -559,10 +566,6 @@ def create_machine(request):
         except Exception as e:
             return Response('Failed to create machine in NephoScale: %s' % e, 500)
     elif conn.type is Provider.SOFTLAYER and public_key:
-        (tmp_key, tmp_key_path) = tempfile.mkstemp()
-        key_fd = os.fdopen(tmp_key, 'w+b')
-        key_fd.write(private_key)
-        key_fd.close()
         key = SSHKeyDeployment(str(public_key))
         deploy_script = ScriptDeployment(script)
         msd = MultiStepDeployment([key, deploy_script])
@@ -586,11 +589,6 @@ def create_machine(request):
     elif conn.type is Provider.DIGITAL_OCEAN and public_key:
         key = str(public_key).replace('\n','')
         deploy_script = ScriptDeployment(script)
-        
-        (tmp_key, tmp_key_path) = tempfile.mkstemp()
-        key_fd = os.fdopen(tmp_key, 'w+b')
-        key_fd.write(private_key)
-        key_fd.close()
 
         try:
             key = conn.ex_create_ssh_key(machine_name, key)
@@ -616,11 +614,6 @@ def create_machine(request):
             return Response('Failed to create machine in DigitalOcean: %s' % e, 500)            
     elif conn.type is Provider.LINODE and public_key and private_key:
         auth = NodeAuthSSHKey(public_key)
-
-        (tmp_key, tmp_key_path) = tempfile.mkstemp()
-        key_fd = os.fdopen(tmp_key, 'w+b')
-        key_fd.write(private_key)
-        key_fd.close()
 
         deploy_script = ScriptDeployment(script)
         try:
