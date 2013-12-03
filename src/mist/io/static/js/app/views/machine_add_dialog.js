@@ -179,6 +179,14 @@ define('app/views/machine_add_dialog', [
                         return false; 
                     }                       
                 }
+                if (providerName.startsWith('HP Cloud')) { 
+                               
+                    var re = /^[0-9a-zA-Z_.]*$/; 
+                    if (!re.test(machineName)) {
+                        Mist.notificationController.timeNotify("Server names may only contain letters, numbers, and the underscore and dash characters.  ", 7000);
+                        return false; 
+                    }                       
+                }                
                 if (providerName == 'Linode') {                
                     var re = /^[0-9a-zA-Z-_]*$/; 
                     if (!re.test(machineName)) {
