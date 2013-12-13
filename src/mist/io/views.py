@@ -479,10 +479,10 @@ def create_machine(request):
                     server_key = k.name
                     break
             if not server_key:
-                server_key = conn.ex_create_keypair(name=machine_name, public_key=key)
+                server_key = conn.ex_import_keypair_from_string(name=machine_name, key_material=key)
                 server_key = machine_name
         except:
-            server_key = conn.ex_create_keypair(name='mistio'+str(random.randint(1,100000)), public_key=key)       
+            server_key = conn.ex_import_keypair_from_string(name='mistio'+str(random.randint(1,100000)), key_material=key)       
             server_key = server_key.name
         try:
             node = conn.deploy_node(name=machine_name,
